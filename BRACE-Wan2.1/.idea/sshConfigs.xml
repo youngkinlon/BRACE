@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SshConfigs">
+    <configs>
+      <sshConfig authType="PASSWORD" host="connect.nma1.seetacloud.com" id="0fd01403-0ba6-4255-8bdc-1203d1906b3f" port="26479" nameFormat="DESCRIPTIVE" username="root" useOpenSSHConfig="true" />
+      <sshConfig authType="PASSWORD" host="connect.westc.seetacloud.com" id="f308987d-b1df-49c4-9256-2a0fd4345b28" port="57823" nameFormat="DESCRIPTIVE" username="root" useOpenSSHConfig="true" />
+      <sshConfig authType="PASSWORD" host="connect.westd.seetacloud.com" id="e282640c-c61e-4621-8bed-f602ea4d5066" port="11623" nameFormat="DESCRIPTIVE" username="root" useOpenSSHConfig="true" />
+      <sshConfig authType="PASSWORD" host="connect.westb.seetacloud.com" id="b65f4963-e09d-4447-88c5-a86ba173ff50" port="50248" nameFormat="DESCRIPTIVE" username="root" useOpenSSHConfig="true" />
+    </configs>
+  </component>
+</project>
