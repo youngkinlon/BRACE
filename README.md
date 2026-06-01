@@ -1,5 +1,9 @@
 # BRACE: Taming Sharp Irregularities via Barycentric Rational Forecasting for Fast Diffusion Transformers Inference
 
+<p align="center">
+  <img src="img.png" alt="BRACE Overview" width="100%">
+</p>
+
 
 ## abstract 
 Diffusion Transformers (DiTs) have demonstrated exceptional performance in high-fidelity image and video generation. To alleviate their massive computational overhead, temporal feature caching has been proposed to bypass redundant computations. However, existing cache-then-forecast methods driven by derivative-based polynomials often cause severe quality degradation under high acceleration due to unstable long-step predictions. To address this bottleneck, we propose Barycentric Rational Forecasting with Chebyshev Enhancement (BRACE). Motivated by the observation that DiT feature trajectories are globally smooth yet frequently exhibit sharp irregularities and local non-smoothness, BRACE shifts the paradigm from derivative-driven polynomial extrapolation to feature-driven rational forecasting. Specifically, it maintains a local sliding window to cache sparse historical features and leverages adapted Chebyshev weights to formulate a barycentric rational function, directly aggregating these raw features to ensure numerical stability. Extensive experiments demonstrate that BRACE achieves state-of-the-art quality efficiency trade-offs across various DiT architectures with negligible computational overhead.
@@ -195,8 +199,137 @@ cd HunyuanVideo
 ./eval/sample_vbench.sh ./eval/ 1 42 5 /path/to/save/vbench/videos /path/to/save/logger/files
 ```
 
+### BRACE-Wan2.1
+
+#### 1. Prepare Environment
+
+Follow the official **Wan2.1** documentation to set up the environment.
+
+```bash
+cd BRACE-Wan2.1
+# Ensure torch >= 2.4.0
+pip install -r requirements.txt
+```
+
+If you encounter **floating point exception (core dump)** on specific GPUs, try:
+
+```bash
+pip install nvidia-cublas-cu12==12.4.5.8
+export LD_LIBRARY_PATH=/opt/conda/lib/python3.8/site-packages/nvidia/cublas/lib/
+```
+
+#### 2. Download Checkpoints
+
+| Models       | Download Link                                                                                                           |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| T2V-14B      | 🤗 [Huggingface](https://huggingface.co/Wan-AI/Wan2.1-T2V-14B)   🤖 [ModelScope](https://www.modelscope.cn/models/Wan-AI/Wan2.1-T2V-14B) |
+| T2V-1.3B     | 🤗 [Huggingface](https://huggingface.co/Wan-AI/Wan2.1-T2V-1.3B)  🤖 [ModelScope](https://www.modelscope.cn/models/Wan-AI/Wan2.1-T2V-1.3B) |
+| I2V-14B-720P | 🤗 [Huggingface](https://huggingface.co/Wan-AI/Wan2.1-I2V-14B-720P) 🤖 [ModelScope](https://www.modelscope.cn/models/Wan-AI/Wan2.1-I2V-14B-720P) |
+| I2V-14B-480P | 🤗 [Huggingface](https://huggingface.co/Wan-AI/Wan2.1-I2V-14B-480P) 🤖 [ModelScope](https://www.modelscope.cn/models/Wan-AI/Wan2.1-I2V-14B-480P) |
+
+```bash
+pip install "huggingface_hub[cli]"
+huggingface-cli download Wan-AI/Wan2.1-T2V-14B --local-dir ./Wan2.1-T2V-14B
+```
+
+#### 3. BRACE-Accelerated Text-to-Video Generation
+
+```bash
+python sample.py --task t2v-14B --size 1280*720 \
+  --ckpt_dir ./Wan2.1-T2V-14B \
+  --prompt "A cat walks on the grass, realistic style." \
+  --sample_steps 50
+```
+
+For batch generation from a prompt file:
+
+```bash
+python sample.py --task t2v-14B --size 1280*720 \
+  --ckpt_dir ./Wan2.1-T2V-14B \
+  --prompt_file /path/to/prompts.txt \
+  --save_folder /path/to/output \
+  --sample_steps 50
+```
+
+On consumer-grade GPUs (e.g., RTX 4090), use memory-saving options:
+
+```bash
+python sample.py --task t2v-1.3B --size 832*480 \
+  --ckpt_dir ./Wan2.1-T2V-1.3B \
+  --offload_model True --t5_cpu \
+  --sample_shift 8 --sample_guide_scale 6 \
+  --prompt "Your prompt here."
+```
+
+#### 4. BRACE-Accelerated Text-to-Image Generation
+
+```bash
+python sample.py --task t2i-14B --size 1024*1024 \
+  --ckpt_dir ./Wan2.1-T2V-14B \
+  --prompt "A beautiful scene." \
+  --sample_steps 50
+```
+
+#### 5. Evaluation
+
+Use the provided scripts for evaluation on ChronoMagic-Bench and other benchmarks:
+
+```bash
+# PSNR/SSIM evaluation
+python eval_video_psnr_ssim.py --gt_folder /path/to/gt --pred_folder /path/to/pred
+```
+
+---
+
+### BRACE-qwen-image 
+
+
+#### Supported Backends
+
+| Backend              | Description              | Status |
+| -------------------- | ------------------------ | ------ |
+| Qwen-Image           | Text-to-image generation | ✅     |
+
+#### 1. Prepare Environment
+
+```bash
+cd BRACE-qwen-image
+pip install --upgrade pip
+pip install -e ".[all]"
+```
+
+#### 2. Download Model Weights
+
+**Qwen-Image weights** can be provided via `--model_path` argument or the `QWEN_IMAGE_MODEL_PATH` environment variable.
+
+#### 3. Run BRACE / HiCache Acceleration
+
+The unified launcher supports multiple acceleration methods ( `Taylor`, `Taylor-Scaled`, `HiCache`, `HiCache-Analytic`, `ToCa`, `Delta`, `ClusCa`, `Hi-ClusCa`, `original`).
+**Qwen-Image backend:**
+
+```bash
+bash RUN/multi_gpu_launcher.sh --backend qwen-image --python /path/to/python -- \
+  --model_path /path/to/Qwen-Image --output_dir outputs/qwen_image
+```
+
+#### 4. Key Parameters
+
+| Parameter         | Description                                          | Default      |
+| ----------------- | ---------------------------------------------------- |--------------|
+| `--backend`       | Model backend (`qwen-image`) | `qwen-image` |
+| `--mode`          | Acceleration method                                  | `Brace`      |
+| `--gpus`          | GPU indices (e.g., `0` or `0,1`)                     | —            |
+| `--interval`      | Cache interval                                       | `5`          |
+| `--max_order`     | Maximum Taylor/forecast order                        | `2`          |
+| `--num_steps`     | Number of sampling steps                             | `50`         |
+| `--force`         | Force recompute results                              | `false`      |
+
+---
+
 ### 👍 Acknowledgements
 - Thanks to DiT for their great work and codebase upon which we build BRACE-DiT.
 - Thanks to FLUX for their great work and codebase upon which we build BRACE-FLUX.
 - Thanks to HunyuanVideo for their great work and codebase upon which we build BRACE-HunyuanVideo.
+- Thanks to Wan2.1 for their great work and codebase upon which we build BRACE-Wan2.1.
+- Thanks to HiCache for their great work and codebase upon which we build BRACE-qwen-image.
 - Thanks to TaylorSeer for their great work and codebase
