@@ -1,0 +1,10 @@
+__pycache__
+.vscode
+build/
+*.egg-info/
+*.so
+outputs/
+output/
+evals/
+figures/
+*slurm*
