@@ -334,3 +334,4 @@ bash RUN/multi_gpu_launcher.sh --backend qwen-image --python /path/to/python -- 
 - Thanks to HiCache for their great work and codebase upon which we build BRACE-qwen-image.
 - Thanks to TaylorSeer for their great work and codebase
 - Thanks to diffuser for their great work and codebase
+- Thanks to our collaborators for their invaluable efforts
